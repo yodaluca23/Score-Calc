@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Score Calculator</title>
-    <link rel="stylesheet" href="https://unpkg.com/darkreader/darkreader.css">
+    <script src="https://unpkg.com/mathjax/es5/tex-mml-chtml.js"></script>
     <style>
         /* Global Styling */
         body {
@@ -15,20 +15,6 @@
             position: relative;
             height: 100vh;
             background-color: #f4f4f9;
-        }
-
-        .container {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1;
         }
 
         h1 {
@@ -87,6 +73,7 @@
             border-left: 4px solid #4a90e2;
             border-radius: 4px;
             margin-bottom: 10px;
+            position: relative;
         }
 
         .error {
@@ -98,6 +85,75 @@
             border-radius: 50%;
             background-color: rgba(74, 144, 226, 0.7);
             opacity: 0.7;
+        }
+
+        .info-icon {
+            font-size: 0.9em;
+            color: #4a90e2;
+            cursor: pointer;
+            margin-left: 5px;
+            display: inline-block;
+            vertical-align: middle;
+            border: 1px solid #4a90e2;
+            border-radius: 50%;
+            padding: 2px;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 18px;
+            position: relative;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            width: auto;
+            background-color: #4a90e2;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 2;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #4a90e2 transparent transparent transparent;
+        }
+
+        .info-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .MathJax_Display {
+            display: inline-block !important;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 60vh;
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
         }
     </style>
 </head>
@@ -116,12 +172,31 @@
         <input type="number" id="basicAddition" placeholder="Enter curve amount"><br>
 
         <button onclick="calculateScore()">Calculate Score</button>
-
+        
         <div class="output" id="output"></div>
     </div>
 
     <script src="https://unpkg.com/darkreader/darkreader.js"></script>
     <script>
+        
+        // Handle Key Presses for denying non-numbers and "Enter" to calculate.
+        const wrong = document.getElementById("wrongQuestions");
+        wrong.addEventListener("keydown", checkName, false);
+        const questions = document.getElementById("questions");
+        questions.addEventListener("keydown", checkName, false);
+        const basic = document.getElementById("basicAddition");
+        basic.addEventListener("keydown", checkName, false);
+        
+        function checkName(evt) {
+          const key = evt.key;
+          if (key == "Enter") {
+            calculateScore();
+          }
+          else if (isNaN(key) && key!= "Backspace" && key!= "Delete" && key!= "Tab" && !evt.metaKey && !evt.ctrlKey && !key.includes("Arrow")) {
+            evt.preventDefault();
+          }
+        }
+        
         // Automatically enable Dark Reader based on system preferences
         DarkReader.auto({
             brightness: 100,
@@ -170,16 +245,12 @@
         animateDots();
 
         function calculateScore() {
-            let h = document.getElementById('questions').value;
-            let g = document.getElementById('wrongQuestions').value;
-            let j = document.getElementById('basicAddition').value;
-            
-            h = Number(h);
-            g = Number(g);
-            j = Number(j);
+            let h = parseFloat(document.getElementById('questions').value);
+            let g = parseFloat(document.getElementById('wrongQuestions').value);
+            let j = parseFloat(document.getElementById('basicAddition').value);
 
-            if (h === 0 || isNaN(h) || isNaN(g) || g > h || g < 0) {
-                document.getElementById('output').innerHTML = "<p class='error'>Please enter valid values for number of questions and questions got wrong.</p>";
+            if (h === 0 || isNaN(h) || isNaN(g) ||  (isNaN(j) && j==='') || g > h || g < 0) {
+                document.getElementById('output').innerHTML = "<p class='error'>Please enter valid numerical values.</p>";
                 return;
             }
 
@@ -188,13 +259,46 @@
             let scoreTestCorrections = ((100 - (scoreNoCurve)) / 2) + scoreNoCurve;
             let scoreBasicAddition = (scoreNoCurve + j);
 
-            // Display Score results
             document.getElementById('output').innerHTML = `
-                <p><strong>Percentage:</strong> ${scoreNoCurve.toFixed(0)}%</p>
-                <p><strong>Square Root Curve:</strong> ${scoreCurve.toFixed(0)}%</p>
-                <p><strong>Test Corrections:</strong> ${scoreTestCorrections.toFixed(0)}%</p>
-                <p><strong>Basic Addition Curve:</strong> ${scoreBasicAddition.toFixed(0)}%</p>
+                <p><strong>Percentage:</strong> ${scoreNoCurve.toFixed(0)}%
+                <span class="info-icon">i
+                        <span class="tooltip">
+                            \\[
+                            \\text{Percentage} = 100 \\times \\frac{\\text{Total} - \\text{Wrong}}{\\text{Total}}
+                            \\]
+                        </span>
+                    </span>
+                </p>
+                <p><strong>Square Root Curve:</strong> ${scoreCurve.toFixed(0)}%
+                    <span class="info-icon">i
+                        <span class="tooltip">
+                            \\[
+                            \\text{Curve} = 10 \\times \\sqrt{\\text{Percentage}}
+                            \\]
+                        </span>
+                    </span>
+                </p>
+                <p><strong>Half-Point Recovery Curve:</strong> ${scoreTestCorrections.toFixed(0)}%
+                    <span class="info-icon">i
+                        <span class="tooltip">
+                            \\[
+                            \\text{Curve} = \\text{Percentage} + \\left( \\frac{100 - \\text{Percentage}}{2} \\right)
+                            \\]
+                        </span>
+                    </span>
+                </p>
+                <p><strong>Basic Addition Curve:</strong> ${scoreBasicAddition.toFixed(0)}%
+                    <span class="info-icon">i
+                        <span class="tooltip">
+                            \\[
+                            \\text{Curve} = \\text{Percentage} + \\text{Curve Amount}
+                            \\]
+                        </span>
+                    </span>
+                </p>
             `;
+
+            MathJax.typesetPromise();
         }
     </script>
 
