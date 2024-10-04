@@ -187,10 +187,23 @@
         const basic = document.getElementById("basicAddition");
         basic.addEventListener("keydown", checkName, false);
         
+        let lastExecutionTime = 0;
+        const throttleDelay = 1000;
+        
+        function submitFunction() {
+            const currentTime = Date.now();
+            
+            if (currentTime - lastExecutionTime >= throttleDelay) {
+                lastExecutionTime = currentTime;
+                
+                calculateScore();
+            }
+        }
+        
         function checkName(evt) {
           const key = evt.key;
           if (key == "Enter") {
-            calculateScore();
+            submitFunction();
           }
           else if (isNaN(key) && key!= "Backspace" && key!= "Delete" && key!= "Tab" && !evt.metaKey && !evt.ctrlKey && !key.includes("Arrow")) {
             evt.preventDefault();
